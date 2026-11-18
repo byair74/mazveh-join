@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>הזמנה למזווה</title>
+<style>
+:root{--page:#f3f5f7;--bg:#fff;--text:#14201f;--text2:#52625f;--hair:#e3e8e7;--accent:#0f766e;--accent-soft:#e1f3f0;--accent-text:#0b5f58;--bad:#b42318}
+@media (prefers-color-scheme:dark){:root{--page:#0e1413;--bg:#17201f;--text:#eaf1f0;--text2:#9fb2af;--hair:#2a3836;--accent:#14998d;--accent-soft:#12302d;--accent-text:#2dd4bf;--bad:#ff8a7a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+main{max-width:520px;margin:0 auto;padding:22px 18px 40px}
+h1{font-size:24px;margin:8px 0 4px}
+.card{background:var(--bg);border:1px solid var(--hair);border-radius:20px;padding:18px;margin:16px 0;box-shadow:0 2px 10px rgba(16,24,40,.06)}
+p{margin:8px 0}
+.small{font-size:13.5px;color:var(--text2)}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;margin:10px 0 0;padding:6px 14px;border-radius:14px;border:1px solid var(--hair);background:transparent;color:var(--accent-text);font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+textarea{width:100%;min-height:92px;margin-top:8px;padding:10px 12px;border:1px solid var(--hair);border-radius:12px;background:var(--page);color:var(--text);font:12.5px/1.4 ui-monospace,Menlo,Consolas,monospace;direction:ltr;text-align:left;resize:vertical}
+.tag{display:inline-block;padding:2px 10px;border-radius:12px;background:var(--accent-soft);color:var(--accent-text);font-size:13px;font-weight:600}
+.warn{color:var(--bad);font-weight:600}
+ol{margin:6px 0 0;padding-inline-start:22px}
+li{margin:4px 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>הזמנה למזווה</h1>
+<p class="small">מזווה היא אפליקציה לרשימת קניות ולמלאי הבית, שמסתנכרנת בין כמה טלפונים.</p>
+
+<section class="card" id="ok" hidden>
+<p><span class="tag" id="what"></span></p>
+<p id="who"></p>
+<p class="warn" id="tokenwarn" hidden>ההזמנה כוללת גם גישה לקריאה ולכתיבה בריפו. אל תעבירו אותה הלאה.</p>
+<a class="btn primary" id="open" href="#">פתיחה במזווה</a>
+<button class="btn" id="copy" type="button">העתקת הקוד</button>
+<details style="margin-top:12px"><summary class="small">אם הכפתור לא פותח את האפליקציה</summary>
+<ol class="small">
+<li>מעתיקים את הקוד (הכפתור למעלה, או מהתיבה שמתחת).</li>
+<li>במזווה, בטאב "עוד", בכרטיס "סנכרון בין מכשירים", מדביקים בשדה "מפתח או הזמנה".</li>
+<li>לוחצים "חיבור וסנכרון".</li>
+</ol>
+<textarea id="code" readonly aria-label="קוד ההזמנה"></textarea>
+</details>
+</section>
+
+<section class="card" id="bad" hidden>
+<p class="warn">הקישור לא שלם או לא תקין.</p>
+<p class="small">הוא צריך להסתיים בקוד ארוך שמתחיל ב־<bdi dir="ltr">mazveh:</bdi>. בקשו מי ששלח לשלוח את ההזמנה שוב, או השתמשו בקוד כפי שהגיע בהודעה.</p>
+</section>
+
+<section class="card" id="app" hidden>
+<p><b>עוד אין לכם את האפליקציה?</b></p>
+<p class="small">מי שהזמין אתכם יכול לשלוח לכם את קובץ ההתקנה (APK) להתקנה בטלפון.</p>
+<a class="btn" id="apk" href="#" hidden>הורדת האפליקציה</a>
+</section>
+
+<p class="small">הקוד נמצא בכתובת אחרי הסימן # ולכן הדפדפן לא שולח אותו לשום שרת. הדף הזה לא שומר ולא סופר כלום.</p>
+</main>
+<script>
+(function(){
+// Where the app can be downloaded from, if there is a public link (leave empty: the button is hidden).
+var APK_URL='';
+var $=function(id){return document.getElementById(id);};
+var m=/mazveh:([A-Za-z0-9_-]{8,})/.exec(decodeURIComponent(location.hash.replace(/^#/,'')));
+if(APK_URL){$('apk').href=APK_URL;$('apk').hidden=false;}
+$('app').hidden=!APK_URL;
+if(!m){$('bad').hidden=false;return;}
+var code='mazveh:'+m[1],info=null;
+try{
+var b=m[1].replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';
+var bin=atob(b),bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+info=JSON.parse(new TextDecoder().decode(bytes));
+}catch(e){}
+if(!info||info.v!==1||!info.r){$('bad').hidden=false;return;}
+$('ok').hidden=false;
+$('what').textContent=info.k||info.p?'הצטרפות לרשימה משותפת':'רשימה חדשה משלכם';
+$('who').textContent=(info.k||info.p)?'מי שהזמין אתכם מצרף אתכם לאותה רשימת קניות ומלאי, כך שכולכם רואים ומעדכנים את אותם פריטים.':'תיפתח לכם רשימה משלכם, באותו מקום שבו נשמרים הנתונים של מי שהזמין אתכם.';
+$('tokenwarn').hidden=!info.t;
+$('open').href='mazveh://join?code='+m[1];
+$('code').value=code;
+$('copy').addEventListener('click',function(){
+var done=function(){$('copy').textContent='הקוד הועתק';setTimeout(function(){$('copy').textContent='העתקת הקוד';},2500);};
+if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(done,function(){$('code').select();});
+else{$('code').select();try{document.execCommand('copy');done();}catch(e){}}
+});
+})();
+</script>
+</body>
+</html>
