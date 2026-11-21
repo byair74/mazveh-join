@@ -55,20 +55,26 @@ li{margin:4px 0}
 
 <section class="card" id="app" hidden>
 <p><b>עוד אין לכם את האפליקציה?</b></p>
-<p class="small">מי שהזמין אתכם יכול לשלוח לכם את קובץ ההתקנה (APK) להתקנה בטלפון.</p>
-<a class="btn" id="apk" href="#" hidden>הורדת האפליקציה</a>
+<ol class="small">
+<li>לוחצים למעלה על «פתיחה במזווה». אם האפליקציה לא מותקנת, קובץ ההתקנה יורד אליכם.</li>
+<li>פותחים את הקובץ שירד. אנדרואיד ישאל אם לאפשר התקנה מהדפדפן: מאשרים (פעם אחת) ולוחצים «התקנה».</li>
+<li>חוזרים לדף הזה (ההזמנה נשארת בכתובת שלו) ולוחצים שוב על «פתיחה במזווה».</li>
+</ol>
+<a class="btn" id="apk" href="#" hidden>הורדת האפליקציה בלבד</a>
+<p class="small" id="apk-note"></p>
 </section>
 
-<p class="small">הקוד נמצא בכתובת אחרי הסימן # ולכן הדפדפן לא שולח אותו לשום שרת. הדף הזה לא שומר ולא סופר כלום.</p>
+<p class="small">הקוד נמצא בכתובת אחרי הסימן # ולכן הדפדפן לא שולח אותו לשום שרת. הדף פונה ל־GitHub רק כדי לבדוק אם יש קובץ התקנה, בלי הקוד. הוא לא שומר ולא סופר כלום.</p>
 </main>
 <script>
 (function(){
-// Where the app can be downloaded from, if there is a public link (leave empty: the button is hidden).
-var APK_URL='';
+// The app's installation file is the asset of the latest release of this repo (the build publishes it there: .github/workflows/android.yml
+// of the app's repo, secret JOIN_REPO_TOKEN). The page asks GitHub for it; without a release nothing about downloading is shown.
+var GH_REPO='byair74/mazveh-join';
+if(/\.github\.io$/.test(location.hostname)){var seg=location.pathname.split('/')[1];if(seg)GH_REPO=location.hostname.replace(/\.github\.io$/,'')+'/'+seg;}
+var android=/Android/i.test(navigator.userAgent);
 var $=function(id){return document.getElementById(id);};
 var m=/mazveh:([A-Za-z0-9_-]{8,})/.exec(decodeURIComponent(location.hash.replace(/^#/,'')));
-if(APK_URL){$('apk').href=APK_URL;$('apk').hidden=false;}
-$('app').hidden=!APK_URL;
 if(!m){$('bad').hidden=false;return;}
 var code='mazveh:'+m[1],info=null;
 try{
@@ -82,6 +88,20 @@ $('what').textContent=info.k||info.p?'הצטרפות לרשימה משותפת':
 $('who').textContent=(info.k||info.p)?'מי שהזמין אתכם מצרף אתכם לאותה רשימת קניות ומלאי, כך שכולכם רואים ומעדכנים את אותם פריטים.':'תיפתח לכם רשימה משלכם, באותו מקום שבו נשמרים הנתונים של מי שהזמין אתכם.';
 $('tokenwarn').hidden=!info.t;
 $('open').href='mazveh://join?code='+m[1];
+// On Android a phone without the app is sent to the installation file: Chrome opens the app by this "intent" link, and when the app is not
+// there it goes to the fallback address, which downloads the file.
+if(android&&window.fetch){
+fetch('https://api.github.com/repos/'+GH_REPO+'/releases/tags/latest',{headers:{Accept:'application/vnd.github+json'}})
+.then(function(r){return r.ok?r.json():null;})
+.then(function(j){
+var a=j&&(j.assets||[]).filter(function(x){return /\.apk$/i.test(x.name);})[0];
+if(!a)return;
+$('open').href='intent://join?code='+m[1]+'#Intent;scheme=mazveh;package=app.mazveh;S.browser_fallback_url='+encodeURIComponent(a.browser_download_url)+';end';
+$('apk').href=a.browser_download_url;$('apk').hidden=false;
+$('apk-note').textContent='קובץ ההתקנה: '+Math.round((a.size||0)/1048576)+' מ״ב, עודכן ב־'+String(a.updated_at||'').slice(0,10).split('-').reverse().join('/')+'.';
+$('app').hidden=false;
+}).catch(function(){});
+}
 $('code').value=code;
 $('copy').addEventListener('click',function(){
 var done=function(){$('copy').textContent='הקוד הועתק';setTimeout(function(){$('copy').textContent='העתקת הקוד';},2500);};
